@@ -1,0 +1,19 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Python version') {
+            steps {
+                sh 'python3 --version'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('account-service') {
+                    sh 'pip install -r requirements.txt'
+                }
+            }
+        }
+    }
+}

@@ -107,7 +107,17 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                sh 'docker push saikiran8050/fintech-frontend:${BUILD_NUMBER}'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                        docker logout
+                    '''
+                }
             }
         }
     }
