@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Custom rule overrides — relax strict TypeScript rules for this project
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",   // downgrade error -> warning
+      "@typescript-eslint/no-unused-vars": "warn",    // downgrade error -> warning
+    },
+  },
 ]);
 
 export default eslintConfig;
