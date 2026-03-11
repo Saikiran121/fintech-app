@@ -12,5 +12,41 @@ pipeline {
                 sh 'npm -v'
             }
         }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+
+        stage('Security Audit') {
+            steps {
+                sh 'npm audit --audit-level=high || true' // Don't fail the build just report
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                sh 'npm run lint'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh 'npm run test'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh 'npm pack'
+            }
+        }
     }
 }
