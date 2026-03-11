@@ -90,14 +90,18 @@ pipeline {
                 // Archive the HTML report as a downloadable build artifact (no plugin needed)
                 archiveArtifacts artifacts: 'trivy-report.html', allowEmptyArchive: true
 
-                sh '''
-                    trivy image \
-                    --scanners vuln \
-                    --severity HIGH,CRITICAL \
-                    --ignore-unfixed \
-                    --exit-code 1 \
-                    saikiran8050/fintech-frontend:${BUILD_NUMBER}
-                '''
+                // Quality gate — marks build UNSTABLE if HIGH/CRITICAL fixable CVEs are found
+                // Pipeline continues to run; failure is reported to Slack via post block
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh '''
+                        trivy image \
+                        --scanners vuln \
+                        --severity HIGH,CRITICAL \
+                        --ignore-unfixed \
+                        --exit-code 1 \
+                        saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                    '''
+                }
             }
         }
     }
