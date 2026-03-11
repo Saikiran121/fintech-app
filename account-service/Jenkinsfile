@@ -30,7 +30,7 @@ pipeline {
                         . venv/bin/activate
                         pip install --upgrade pip
                         pip install flake8
-                        flake8 .
+                        flake8 . --exclude=venv
                      '''
                 }
             }
