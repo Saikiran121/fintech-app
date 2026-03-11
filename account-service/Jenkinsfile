@@ -16,4 +16,25 @@ pipeline {
             }
         }
     }
+
+    post {
+        failure {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":x: *Pipeline FAILED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
+                    \$SLACK_URL
+                """
+            }
+        }
+        success {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":white_check_mark: *Pipeline PASSED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}"}' \
+                    \$SLACK_URL
+                """
+            }
+        }
+    }
 }
