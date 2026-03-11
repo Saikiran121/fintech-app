@@ -60,6 +60,14 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                dir('frontend') {
+                    sh 'docker build -t saikiran8050/fintech-frontend:v1 .'
+                }
+            }
+        }
     }
 
     post {
