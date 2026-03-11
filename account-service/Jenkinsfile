@@ -35,6 +35,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Security Audit') {
+            steps {
+                dir('account-service') {
+                    sh '''
+                        ./venv/bin/pip install bandit
+                        ./venv/bin/bandit -r . -x venv -f json -o bandit-report.json
+                    '''
+
+                    archiveArtifacts artifacts: 'account-service/bandit-report.json', allowEmptyArchive: true
+                }
+            }
+        }
     }
 
     post {
