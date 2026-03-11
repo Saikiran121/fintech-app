@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  user-service:
+    build: ./user-service
+    ports:
+      - "8081:8081"
+    networks:
+      - fintech-network
+
+  account-service:
+    build: ./account-service
+    ports:
+      - "8082:8082"
+    networks:
+      - fintech-network
+
+  transaction-service:
+    build: ./transaction-service
+    ports:
+      - "8083:8083"
+    environment:
+      - ACCOUNT_SERVICE_URL=http://account-service:8082
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8084
+    depends_on:
+      - account-service
+      - notification-service
+    networks:
+      - fintech-network
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./notification-service/.env
+    networks:
+      - fintech-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - account-service
+      - transaction-service
+    networks:
+      - fintech-network
+
+networks:
+  fintech-network:
+    driver: bridge
