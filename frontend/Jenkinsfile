@@ -64,29 +64,22 @@ pipeline {
 
     post {
         failure {
-            slackSend(
-                channel: '#jenkins-notifications',   // <-- change to your Slack channel e.g. '#jenkins-alerts'
-                color: 'danger',
-                message: """
-                    :x: *Pipeline FAILED!*
-                    *Job:* ${env.JOB_NAME}
-                    *Build #:* ${env.BUILD_NUMBER}
-                    *Branch:* ${env.GIT_BRANCH}
-                    *Details:* ${env.BUILD_URL}
-                """.stripIndent()
-            )
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":x: *Pipeline FAILED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
+                    \$SLACK_URL
+                """
+            }
         }
         success {
-            slackSend(
-                channel: '#jenkins-notifications',   // <-- same channel
-                color: 'good',
-                message: """
-                    :white_check_mark: *Pipeline PASSED!*
-                    *Job:* ${env.JOB_NAME}
-                    *Build #:* ${env.BUILD_NUMBER}
-                    *Branch:* ${env.GIT_BRANCH}
-                """.stripIndent()
-            )
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":white_check_mark: *Pipeline PASSED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}"}' \
+                    \$SLACK_URL
+                """
+            }
         }
     }
 }
