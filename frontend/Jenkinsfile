@@ -85,7 +85,7 @@ pipeline {
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
-                    keepAll: true 
+                    keepAll: true,
                     reportDir: '.',
                     reportFiles: 'trivy-report.html',
                     reportName: 'Trivy Scan Report'
