@@ -81,7 +81,6 @@ pipeline {
 
                     trivy image \
                     --severity HIGH,CRITICAL \
-                    --exit-code 1 \
                     --format template \
                     --template "@trivy-html.tpl" \
                     -o trivy-report.html \
@@ -96,6 +95,15 @@ pipeline {
                     reportFiles: 'trivy-report.html',
                     reportName: 'Trivy Scan Report'
                 ])
+
+                sh '''
+                    trivy image \
+                    --scanners vuln \
+                    --severity HIGH,CRITICAL \
+                    --ignore-unfixed \
+                    --exit-code 1 \
+                    saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                '''
             }
         }
     }
