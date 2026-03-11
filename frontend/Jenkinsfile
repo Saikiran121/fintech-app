@@ -61,4 +61,32 @@ pipeline {
             }
         }
     }
+
+    post {
+        failure {
+            slackSend(
+                channel: '#jenkins-notifications',   // <-- change to your Slack channel e.g. '#jenkins-alerts'
+                color: 'danger',
+                message: """
+                    :x: *Pipeline FAILED!*
+                    *Job:* ${env.JOB_NAME}
+                    *Build #:* ${env.BUILD_NUMBER}
+                    *Branch:* ${env.GIT_BRANCH}
+                    *Details:* ${env.BUILD_URL}
+                """.stripIndent()
+            )
+        }
+        success {
+            slackSend(
+                channel: '#jenkins-notifications',   // <-- same channel
+                color: 'good',
+                message: """
+                    :white_check_mark: *Pipeline PASSED!*
+                    *Job:* ${env.JOB_NAME}
+                    *Build #:* ${env.BUILD_NUMBER}
+                    *Branch:* ${env.GIT_BRANCH}
+                """.stripIndent()
+            )
+        }
+    }
 }
