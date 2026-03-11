@@ -104,6 +104,12 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Push') {
+            steps {
+                sh 'docker push saikiran8050/fintech-frontend:${BUILD_NUMBER}'
+            }
+        }
     }
 
     post {
