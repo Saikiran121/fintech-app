@@ -1,11 +1,11 @@
 pipeline {
-    agent any 
+    agent any
 
     tools {
         nodejs 'node-22'
     }
 
-    stages{
+    stages {
         stage('npm version') {
             steps {
                 sh 'node -v'
@@ -15,37 +15,49 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('frontend') {
+                    sh 'npm install'
+                }
             }
         }
 
         stage('Security Audit') {
             steps {
-                sh 'npm audit --audit-level=high || true' // Don't fail the build just report
+                dir('frontend') {
+                    sh 'npm audit --audit-level=high || true'
+                }
             }
         }
 
         stage('Lint') {
             steps {
-                sh 'npm run lint'
+                dir('frontend') {
+                    sh 'npm run lint'
+                }
             }
         }
 
         stage('Unit Tests') {
             steps {
-                sh 'npm run test'
+                dir('frontend') {
+                    sh 'npm run test'
+                }
             }
         }
 
         stage('Build') {
             steps {
-                sh 'npm run build'
+                dir('frontend') {
+                    sh 'npm run build'
+                }
             }
         }
 
         stage('Package') {
             steps {
-                sh 'npm pack'
+                dir('frontend') {
+                    sh 'npm pack'
+                }
             }
         }
     }
