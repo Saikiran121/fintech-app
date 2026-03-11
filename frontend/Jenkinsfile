@@ -87,14 +87,8 @@ pipeline {
                     saikiran8050/fintech-frontend:${BUILD_NUMBER}
                 '''
 
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'trivy-report.html',
-                    reportName: 'Trivy Scan Report'
-                ])
+                // Archive the HTML report as a downloadable build artifact (no plugin needed)
+                archiveArtifacts artifacts: 'trivy-report.html', allowEmptyArchive: true
 
                 sh '''
                     trivy image \
