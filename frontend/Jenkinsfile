@@ -64,8 +64,32 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir('frontend') {
-                    sh 'docker build -t saikiran8050/fintech-frontend:v1 .'
+                    sh 'docker build -t saikiran8050/fintech-frontend:${BUILD_NUMBER} .'
                 }
+            }
+        }
+
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    --format template \
+                    --template "@contrib/html.tpl" \
+                    -o trivy-report.html \
+                    saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                '''
+
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true 
+                    reportDir: '.',
+                    reportFiles: 'trivy-report.html',
+                    reportName: 'Trivy Scan Report'
+                ])
             }
         }
     }
