@@ -73,11 +73,17 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
                 sh '''
+                    # Download the HTML template if not already cached
+                    if [ ! -f trivy-html.tpl ]; then
+                        curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+                            -o trivy-html.tpl
+                    fi
+
                     trivy image \
                     --severity HIGH,CRITICAL \
                     --exit-code 1 \
                     --format template \
-                    --template "@contrib/html.tpl" \
+                    --template "@trivy-html.tpl" \
                     -o trivy-report.html \
                     saikiran8050/fintech-frontend:${BUILD_NUMBER}
                 '''
