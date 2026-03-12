@@ -1,9 +1,102 @@
 pipeline {
-    agent any 
+    agent any
 
     stages {
         stage('Ruby Version') {
-            sh 'ruby -v'
+            steps {
+                sh 'ruby -v'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('notification-service') {
+                    sh '''
+                        gem install bundler --no-document
+                        bundle install
+                    '''
+                }
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                dir('notification-service') {
+                    sh '''
+                        gem install rubocop --no-document
+                        rubocop app.rb config.ru --format simple || true
+                    '''
+                }
+            }
+        }
+
+        stage('Security Audit') {
+            steps {
+                dir('notification-service') {
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                        sh '''
+                            gem install bundler-audit --no-document
+                            bundle-audit update
+                            bundle-audit check
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('notification-service') {
+                    sh 'docker build -t saikiran8050/fintech-notification-service:${BUILD_NUMBER} .'
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                    if [ ! -f trivy-html.tpl ]; then
+                        curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+                            -o trivy-html.tpl
+                    fi
+
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --format template \
+                    --template "@trivy-html.tpl" \
+                    -o trivy-report.html \
+                    saikiran8050/fintech-notification-service:${BUILD_NUMBER}
+                '''
+
+                archiveArtifacts artifacts: 'trivy-report.html', allowEmptyArchive: true
+
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh '''
+                        trivy image \
+                        --scanners vuln \
+                        --severity HIGH,CRITICAL \
+                        --ignore-unfixed \
+                        --exit-code 1 \
+                        saikiran8050/fintech-notification-service:${BUILD_NUMBER}
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push saikiran8050/fintech-notification-service:${BUILD_NUMBER}
+                        docker logout
+                    '''
+                }
+            }
         }
     }
 
@@ -21,7 +114,7 @@ pipeline {
             withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
                 sh """
                     curl -s -X POST -H 'Content-type: application/json' \
-                    --data '{"text":":warning: *Pipeline UNSTABLE!*\\n*Security issues found (Bandit/Trivy)*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
+                    --data '{"text":":warning: *Pipeline UNSTABLE!*\\n*Security issues found*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
                     \$SLACK_URL
                 """
             }
