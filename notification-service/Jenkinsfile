@@ -12,7 +12,10 @@ pipeline {
             steps {
                 dir('notification-service') {
                     sh '''
-                        bundle config set --local path vendor/bundle
+                        export GEM_HOME=$PWD/.gem
+                        export PATH=$PATH:$GEM_HOME/bin
+                        gem install bundler --no-document
+                        bundle config set --local path 'vendor/bundle'
                         bundle install
                     '''
                 }
@@ -23,8 +26,8 @@ pipeline {
             steps {
                 dir('notification-service') {
                     sh '''
-                        bundle config set --local path vendor/bundle
-                        bundle add rubocop --skip-install || true
+                        export GEM_HOME=$PWD/.gem
+                        export PATH=$PATH:$GEM_HOME/bin
                         bundle exec rubocop app.rb config.ru --format simple || true
                     '''
                 }
@@ -36,8 +39,8 @@ pipeline {
                 dir('notification-service') {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
                         sh '''
-                            bundle config set --local path vendor/bundle
-                            bundle add bundler-audit --skip-install || true
+                            export GEM_HOME=$PWD/.gem
+                            export PATH=$PATH:$GEM_HOME/bin
                             bundle exec bundle-audit update
                             bundle exec bundle-audit check
                         '''
