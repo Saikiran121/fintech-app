@@ -98,6 +98,7 @@ pipeline {
                     sh '''
                         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
                         docker push saikiran8050/fintech-notification-service:${BUILD_NUMBER}
+                        docker rmi saikiran8050/fintech-notification-service:${BUILD_NUMBER}
                         docker logout
                     '''
                 }
