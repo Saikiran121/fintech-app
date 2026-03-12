@@ -63,6 +63,16 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                dir('account-service') {
+                    sh '''
+                        docker build -t saikiran8050/fintech-frontend:${BUILD_NUMBER} .
+                    '''
+                }
+            }
+        }
     }
 
     post {
