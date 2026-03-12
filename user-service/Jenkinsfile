@@ -1,0 +1,135 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Go Version') {
+            steps {
+                sh 'go version'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('user-service') {
+                    sh 'go mod tidy'
+                }
+            }
+        }
+
+        stage('Static Analysis (Lint)') {
+            steps {
+                dir('user-service') {
+                    // Non-blocking static analysis
+                    sh 'go vet ./... || true'
+                }
+            }
+        }
+
+        stage('Security Audit') {
+            steps {
+                dir('user-service') {
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                        sh '''
+                            go install golang.org/x/vuln/cmd/govulncheck@latest
+                            $(go env GOPATH)/bin/govulncheck ./...
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                dir('user-service') {
+                    sh 'go test -v ./...'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('user-service') {
+                    sh 'docker build -t saikiran8050/fintech-user-service:${BUILD_NUMBER} .'
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                    if [ ! -f trivy-html.tpl ]; then
+                        curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+                            -o trivy-html.tpl
+                    fi
+
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --format template \
+                    --template "@trivy-html.tpl" \
+                    -o trivy-report.html \
+                    saikiran8050/fintech-user-service:${BUILD_NUMBER}
+                '''
+
+                archiveArtifacts artifacts: 'trivy-report.html', allowEmptyArchive: true
+
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh '''
+                        trivy image \
+                        --scanners vuln \
+                        --severity HIGH,CRITICAL \
+                        --ignore-unfixed \
+                        --exit-code 1 \
+                        saikiran8050/fintech-user-service:${BUILD_NUMBER}
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push saikiran8050/fintech-user-service:${BUILD_NUMBER}
+                        docker rmi saikiran8050/fintech-user-service:${BUILD_NUMBER}
+                        docker logout
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":x: *Pipeline FAILED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
+                    \$SLACK_URL
+                """
+            }
+        }
+        unstable {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":warning: *Pipeline UNSTABLE!*\\n*Security issues found*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}\\n*Details:* ${env.BUILD_URL}"}' \
+                    \$SLACK_URL
+                """
+            }
+        }
+        success {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh """
+                    curl -s -X POST -H 'Content-type: application/json' \
+                    --data '{"text":":white_check_mark: *Pipeline PASSED!*\\n*Job:* ${env.JOB_NAME}\\n*Build #:* ${env.BUILD_NUMBER}\\n*Branch:* ${env.GIT_BRANCH}"}' \
+                    \$SLACK_URL
+                """
+            }
+        }
+    }
+}
