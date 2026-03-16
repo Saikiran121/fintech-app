@@ -7,7 +7,7 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                 credentialsId: 'aws-creds']]) {
                     dir('EKS-IAC') {
-                        sh 'terraform init'
+                        sh 'terraform init -reconfigure'
                     }
                 }   
             }
