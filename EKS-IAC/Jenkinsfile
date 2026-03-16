@@ -4,7 +4,7 @@ pipeline {
     stages{
         stage('Terraform Init') {
             steps {
-                dir('terraform') {
+                dir('EKS-IAC') {
                     sh 'terraform init'
                 }
             }
@@ -12,7 +12,7 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir('terraform') {
+                dir('EKS-IAC') {
                     sh 'terraform validate'
                 }
             }
@@ -20,7 +20,7 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                dir('terraform') {
+                dir('EKS-IAC') {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir('terraform') {
+                dir('EKS-IAC') {
                     sh 'terraform apply -auto-approve tfplan'
                 }
             }
