@@ -64,7 +64,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir('frontend') {
-                    sh 'docker build -t saikiran8050/fintech-frontend:${BUILD_NUMBER} .'
+                    sh 'docker build -t saikiran8050/fintech-frontend-service:${BUILD_NUMBER} .'
                 }
             }
         }
@@ -84,7 +84,7 @@ pipeline {
                     --format template \
                     --template "@trivy-html.tpl" \
                     -o trivy-report.html \
-                    saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                    saikiran8050/fintech-frontend-service:${BUILD_NUMBER}
                 '''
 
                 // Archive the HTML report as a downloadable build artifact (no plugin needed)
@@ -99,7 +99,7 @@ pipeline {
                         --severity HIGH,CRITICAL \
                         --ignore-unfixed \
                         --exit-code 0 \
-                        saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                        saikiran8050/fintech-frontend-service:${BUILD_NUMBER}
                     '''
                 }
             }
@@ -114,7 +114,7 @@ pipeline {
                 )]) {
                     sh '''
                         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                        docker push saikiran8050/fintech-frontend:${BUILD_NUMBER}
+                        docker push saikiran8050/fintech-frontend-service:${BUILD_NUMBER}
                         docker logout
                     '''
                 }
@@ -124,7 +124,7 @@ pipeline {
 
         stage('Remove Local Image') {
             steps {
-                sh 'docker rmi saikiran8050/fintech-frontend:${BUILD_NUMBER} || true'
+                sh 'docker rmi saikiran8050/fintech-frontend-service:${BUILD_NUMBER} || true'
             }
         }
     }
