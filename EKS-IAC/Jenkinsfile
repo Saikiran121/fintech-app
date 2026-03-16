@@ -1,0 +1,9 @@
+pipeline {
+    agent any 
+
+    steps{
+        step {
+            sh 'terraform init'
+        }
+    }
+}
