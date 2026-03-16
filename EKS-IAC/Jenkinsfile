@@ -1,6 +1,10 @@
 pipeline {
     agent any 
 
+    options {
+        disableConcurrentBuilds()
+    }
+
     stages{
         stage('Terraform Init') {
             steps {
@@ -29,7 +33,7 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                 credentialsId: 'aws-creds']]) {
                     dir('EKS-IAC') {
-                        sh 'terraform plan -out=tfplan'
+                        sh 'terraform plan -lock-timeout=5m -out=tfplan'
                     }
                 }   
             }
