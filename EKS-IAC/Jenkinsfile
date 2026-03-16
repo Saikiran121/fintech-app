@@ -4,32 +4,44 @@ pipeline {
     stages{
         stage('Terraform Init') {
             steps {
-                dir('EKS-IAC') {
-                    sh 'terraform init'
-                }
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-credentials']]) {
+                    dir('EKS-IAC') {
+                        sh 'terraform init'
+                    }
+                }   
             }
         }
 
         stage('Terraform Validate') {
             steps {
-                dir('EKS-IAC') {
-                    sh 'terraform validate'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-credentials']]) {
+                    dir('EKS-IAC') {
+                        sh 'terraform validate'
+                    }
                 }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir('EKS-IAC') {
-                    sh 'terraform plan -out=tfplan'
-                }
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-credentials']]) {
+                    dir('EKS-IAC') {
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }   
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                dir('EKS-IAC') {
-                    sh 'terraform apply -auto-approve tfplan'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-credentials']]) {
+                    dir('EKS-IAC') {
+                        sh 'terraform apply -auto-approve tfplan'
+                    }
                 }
             }
         }
